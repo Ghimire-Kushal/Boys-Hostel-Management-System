@@ -4,9 +4,11 @@ import Header from './Header'
 
 const pageTitles = {
   '/dashboard': 'Dashboard',
-  '/rooms': 'Rooms',
-  '/tenants': 'Tenants',
-  '/payments': 'Payments',
+  '/rooms':     'Rooms',
+  '/bookings':  'Bookings',
+  '/students':  'Students',
+  '/payments':  'Payments',
+  '/food':      'Food Management',
 }
 
 export default function MainLayout() {

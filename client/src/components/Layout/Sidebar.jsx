@@ -1,19 +1,14 @@
 import { NavLink } from 'react-router-dom'
-import {
-  LayoutDashboard,
-  BedDouble,
-  Users,
-  CreditCard,
-  LogOut,
-  Building2,
-} from 'lucide-react'
+import { LayoutDashboard, BedDouble, Users, CreditCard, LogOut, Building2, BookOpen, ChefHat } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/rooms', icon: BedDouble, label: 'Rooms' },
-  { to: '/tenants', icon: Users, label: 'Tenants' },
-  { to: '/payments', icon: CreditCard, label: 'Payments' },
+  { to: '/rooms',     icon: BedDouble,       label: 'Rooms' },
+  { to: '/bookings',  icon: BookOpen,        label: 'Bookings' },
+  { to: '/students',  icon: Users,           label: 'Students' },
+  { to: '/payments',  icon: CreditCard,      label: 'Payments' },
+  { to: '/food',      icon: ChefHat,         label: 'Food' },
 ]
 
 export default function Sidebar() {
@@ -35,19 +30,12 @@ export default function Sidebar() {
 
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
+          <NavLink key={to} to={to}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-primary-600 text-white'
-                  : 'text-primary-200 hover:bg-primary-800 hover:text-white'
-              }`
-            }
-          >
-            <Icon size={18} />
-            {label}
+                isActive ? 'bg-primary-600 text-white' : 'text-primary-200 hover:bg-primary-800 hover:text-white'
+              }`}>
+            <Icon size={18} />{label}
           </NavLink>
         ))}
       </nav>
@@ -62,12 +50,9 @@ export default function Sidebar() {
             <p className="text-xs text-primary-300 truncate">{user?.email}</p>
           </div>
         </div>
-        <button
-          onClick={logout}
-          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-medium text-primary-200 hover:bg-primary-800 hover:text-white transition-colors"
-        >
-          <LogOut size={18} />
-          Logout
+        <button onClick={logout}
+          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-medium text-primary-200 hover:bg-primary-800 hover:text-white transition-colors">
+          <LogOut size={18} /> Logout
         </button>
       </div>
     </aside>
