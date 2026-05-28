@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, BedDouble, Users, CreditCard, LogOut, Building2, BookOpen, ChefHat } from 'lucide-react'
+import { LayoutDashboard, BedDouble, Users, CreditCard, LogOut, Building2, BookOpen, ChefHat, MessageSquare } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { to: '/students',  icon: Users,           label: 'Students' },
   { to: '/payments',  icon: CreditCard,      label: 'Payments' },
   { to: '/food',      icon: ChefHat,         label: 'Food' },
+  { to: '/feedback',  icon: MessageSquare,   label: 'Feedback' },
 ]
 
 export default function Sidebar() {

@@ -35,37 +35,24 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              required
-              className="input-field"
+            <input type="email" required className="input-field"
               placeholder="admin@hostelease.com"
               value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
+              onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                className="input-field pr-10"
+              <input type={showPassword ? 'text' : 'password'} required className="input-field pr-10"
                 placeholder="Enter your password"
                 value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
+                onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              <button type="button" onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
-
           <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 mt-2">
             {loading ? 'Signing in...' : 'Sign In'}
           </button>

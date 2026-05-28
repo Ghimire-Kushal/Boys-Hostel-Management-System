@@ -1,6 +1,23 @@
 const FoodMenu = require('../models/FoodMenu')
 const FoodComplaint = require('../models/FoodComplaint')
 
+exports.getWeekMenuPublic = async (req, res) => {
+  try {
+    const today = new Date()
+    const dow = today.getDay()
+    const monday = new Date(today)
+    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1))
+    monday.setHours(0, 0, 0, 0)
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    sunday.setHours(23, 59, 59, 999)
+    const menus = await FoodMenu.find({ date: { $gte: monday, $lte: sunday } }).sort({ date: 1 })
+    res.json({ menus, weekStart: monday, weekEnd: sunday })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}
+
 exports.getMenus = async (req, res) => {
   try {
     const menus = await FoodMenu.find().sort({ date: -1 }).limit(30)

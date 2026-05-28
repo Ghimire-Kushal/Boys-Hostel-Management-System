@@ -17,7 +17,10 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      window.location.href = '/login'
+      // Only redirect if currently on an admin page, not the public landing
+      if (!['/', '/student'].includes(window.location.pathname)) {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(err)
   }

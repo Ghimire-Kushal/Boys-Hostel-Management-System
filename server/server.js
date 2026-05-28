@@ -17,6 +17,9 @@ app.use('/api/bookings',  require('./routes/bookings'))
 app.use('/api/payments',  require('./routes/payments'))
 app.use('/api/food',      require('./routes/food'))
 app.use('/api/dashboard', require('./routes/dashboard'))
+app.use('/api/payment-qr', require('./routes/paymentQR'))
+app.use('/api/student',    require('./routes/student'))
+app.use('/api/feedback',   require('./routes/feedback'))
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }))
 
