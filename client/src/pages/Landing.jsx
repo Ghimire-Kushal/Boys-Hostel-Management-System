@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Building2, Star, Send, ShieldCheck,
-  UtensilsCrossed, CreditCard, Wifi, Phone, MapPin, Clock,
-  Coffee, Sun, Moon, Apple, QrCode, ScanLine, MessageSquare,
+  UtensilsCrossed, QrCode, ScanLine, MessageSquare,
+  Coffee, Sun, Moon, Apple,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { submitFeedback } from '../services/feedbackService'
@@ -13,21 +13,22 @@ import { formatBS, getDayName, getWeekDates } from '../utils/nepaliDate'
 const CATEGORIES = ['General', 'Food', 'Room', 'Staff', 'Facilities', 'Payment']
 const INITIAL_FORM = { name: '', isAnonymous: false, category: 'General', message: '', rating: 0 }
 const DAY_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+const DAY_NP    = ['आइत','सोम','मंगल','बुध','बिही','शुक्र','शनि']
 
 const mealConfig = [
-  { key: 'breakfast', label: 'Breakfast', icon: Coffee, color: 'text-orange-500', bg: 'bg-orange-50' },
-  { key: 'lunch',     label: 'Lunch',     icon: Sun,    color: 'text-yellow-500', bg: 'bg-yellow-50' },
-  { key: 'dinner',    label: 'Dinner',    icon: Moon,   color: 'text-indigo-500', bg: 'bg-indigo-50' },
-  { key: 'snacks',    label: 'Snacks',    icon: Apple,  color: 'text-green-500',  bg: 'bg-green-50' },
+  { key: 'breakfast', label: 'Breakfast', nepali: 'बिहान', icon: Coffee, color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-100' },
+  { key: 'lunch',     label: 'Lunch',     nepali: 'दिउँसो', icon: Sun,    color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-100' },
+  { key: 'dinner',    label: 'Dinner',    nepali: 'बेलुका', icon: Moon,   color: 'text-indigo-500', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+  { key: 'snacks',    label: 'Snacks',    nepali: 'खाजा',  icon: Apple,  color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-green-100' },
 ]
 
-const walletBadge = {
-  eSewa:          'bg-green-100 text-green-700',
-  Khalti:         'bg-purple-100 text-purple-700',
-  'IME Pay':      'bg-red-100 text-red-700',
-  ConnectIPS:     'bg-blue-100 text-blue-700',
-  'Bank Transfer':'bg-gray-100 text-gray-700',
-  Other:          'bg-orange-100 text-orange-700',
+const walletColors = {
+  eSewa:          { badge: 'bg-green-100 text-green-700',   border: 'border-green-200',  glow: 'hover:border-green-400' },
+  Khalti:         { badge: 'bg-purple-100 text-purple-700', border: 'border-purple-200', glow: 'hover:border-purple-400' },
+  'IME Pay':      { badge: 'bg-red-100 text-red-700',       border: 'border-red-200',    glow: 'hover:border-red-400' },
+  ConnectIPS:     { badge: 'bg-blue-100 text-blue-700',     border: 'border-blue-200',   glow: 'hover:border-blue-400' },
+  'Bank Transfer':{ badge: 'bg-gray-100 text-gray-700',     border: 'border-gray-200',   glow: 'hover:border-gray-400' },
+  Other:          { badge: 'bg-orange-100 text-orange-700', border: 'border-orange-200', glow: 'hover:border-orange-400' },
 }
 
 function StarRating({ value, onChange }) {
@@ -38,7 +39,7 @@ function StarRating({ value, onChange }) {
         <button key={s} type="button"
           onMouseEnter={() => setHovered(s)} onMouseLeave={() => setHovered(0)}
           onClick={() => onChange(s)}>
-          <Star size={22} className={(hovered || value) >= s ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'} />
+          <Star size={22} className={(hovered || value) >= s ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'} />
         </button>
       ))}
     </div>
@@ -55,8 +56,8 @@ export default function Landing() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
-  const foodRef = useRef(null)
-  const payRef = useRef(null)
+  const foodRef     = useRef(null)
+  const payRef      = useRef(null)
   const feedbackRef = useRef(null)
 
   useEffect(() => {
@@ -64,9 +65,28 @@ export default function Landing() {
     getPublicQRCodes().then((r) => setQrs(r.data.qrs ?? [])).catch(() => {})
   }, [])
 
+  // Scroll-spy
+  useEffect(() => {
+    const refs = [
+      { id: 'food', ref: foodRef },
+      { id: 'payment', ref: payRef },
+      { id: 'feedback', ref: feedbackRef },
+    ]
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) setActiveSection(e.target.dataset.section)
+        })
+      },
+      { rootMargin: '-30% 0px -60% 0px' }
+    )
+    refs.forEach(({ ref }) => { if (ref.current) observer.observe(ref.current) })
+    return () => observer.disconnect()
+  }, [])
+
   const scrollTo = (ref, section) => {
-    setActiveSection(section)
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setActiveSection(section)
   }
 
   const today = new Date()
@@ -85,7 +105,6 @@ export default function Landing() {
       await submitFeedback(form)
       setSubmitted(true)
       setForm(INITIAL_FORM)
-      toast.success('Thank you for your feedback!')
     } catch (err) {
       toast.error(err.response?.data?.message ?? 'Failed to submit')
     } finally {
@@ -93,69 +112,78 @@ export default function Landing() {
     }
   }
 
+  const NAV = [
+    { id: 'food',     label: 'Food Schedule', nepali: 'खाना',   icon: UtensilsCrossed, ref: foodRef },
+    { id: 'payment',  label: 'Pay Rent',       nepali: 'भाडा',   icon: QrCode,          ref: payRef },
+    { id: 'feedback', label: 'Feedback',       nepali: 'प्रतिक्रिया', icon: MessageSquare,   ref: feedbackRef },
+  ]
+
   return (
     <div className="min-h-screen bg-gray-50">
 
-      {/* ── Top header ── */}
-      <header className="bg-white shadow-sm sticky top-0 z-20">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      {/* ─── Sticky Header ─── */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-primary-600 p-2 rounded-lg">
+            <div className="bg-primary-600 p-2 rounded-lg shrink-0">
               <Building2 size={20} className="text-white" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-gray-900 leading-none">HostelEase Nepal</h1>
-              <p className="text-xs text-gray-500">Boys Hostel Management</p>
+              <p className="text-sm font-bold text-gray-900 leading-none">HostelEase Nepal</p>
+              <p className="text-xs text-gray-400 mt-0.5">Boys Hostel</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-gray-400 hidden sm:block">
-              {today.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}
-              &nbsp;·&nbsp;{formatBS(today)} BS
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <p className="text-xs font-medium text-gray-700">
+                {today.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}
+              </p>
+              <p className="text-xs text-gray-400">{formatBS(today)} BS</p>
+            </div>
             <Link to="/login"
               className="flex items-center gap-1.5 bg-primary-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
-              <ShieldCheck size={14} /> Login
+              <ShieldCheck size={14} /> Admin Login
             </Link>
           </div>
         </div>
 
-        {/* ── Section nav bar ── */}
-        <div className="border-t border-gray-100 bg-white">
-          <div className="max-w-4xl mx-auto px-4 flex">
-            {[
-              { id: 'food',     label: 'Food Schedule', icon: UtensilsCrossed, ref: foodRef },
-              { id: 'payment',  label: 'Pay Rent',      icon: QrCode,          ref: payRef },
-              { id: 'feedback', label: 'Feedback',      icon: MessageSquare,   ref: feedbackRef },
-            ].map(({ id, label, icon: Icon, ref }) => (
-              <button key={id} onClick={() => scrollTo(ref, id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeSection === id
-                    ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
-                }`}>
-                <Icon size={15} />
-                <span className="hidden sm:inline">{label}</span>
-                <span className="sm:hidden">{label.split(' ')[0]}</span>
-              </button>
-            ))}
-          </div>
+        {/* Section nav */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex gap-0">
+          {NAV.map(({ id, label, nepali, icon: Icon, ref }) => (
+            <button key={id} onClick={() => scrollTo(ref, id)}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
+                activeSection === id
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-800'
+              }`}>
+              <Icon size={15} />
+              <span className="hidden sm:inline">{label}</span>
+              <span className="sm:hidden">{label.split(' ')[0]}</span>
+              <span className="text-xs text-gray-400 hidden md:inline">({nepali})</span>
+            </button>
+          ))}
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-10 pb-16">
+      {/* ─── Content ─── */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-14">
 
-        {/* ── Food Schedule ── */}
-        <section ref={foodRef}>
-          <div className="mb-4">
-            <h2 className="text-xl font-bold text-gray-900">This Week's Food Schedule</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {weekDates[0] && `${formatBS(weekDates[0])} – ${formatBS(weekDates[6])} BS`}
-            </p>
+        {/* ── FOOD SCHEDULE ── */}
+        <section ref={foodRef} data-section="food">
+          <div className="flex items-end justify-between mb-5">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">This Week's Food Schedule</h2>
+              <p className="text-sm text-gray-400 mt-0.5">
+                {weekDates[0] ? `${formatBS(weekDates[0])} – ${formatBS(weekDates[6])} BS` : ''}
+              </p>
+            </div>
+            <span className="text-xs bg-primary-50 text-primary-600 px-2.5 py-1 rounded-full font-medium border border-primary-100">
+              {today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </span>
           </div>
 
           {/* Day picker */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-4">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-5">
             <div className="grid grid-cols-7">
               {weekDates.map((date, idx) => {
                 const dow = date.getDay()
@@ -164,120 +192,158 @@ export default function Landing() {
                 const isSelected = dow === selectedDay
                 return (
                   <button key={idx} onClick={() => setSelectedDay(dow)}
-                    className={`py-3 flex flex-col items-center gap-1 transition-colors ${
-                      isSelected ? 'bg-primary-600 text-white' : 'hover:bg-gray-50 text-gray-600'
+                    className={`py-3.5 flex flex-col items-center gap-1.5 transition-all ${
+                      isSelected ? 'bg-primary-600' : 'hover:bg-gray-50'
                     }`}>
-                    <span className={`text-xs font-medium ${isSelected ? 'text-primary-100' : 'text-gray-400'}`}>
-                      {DAY_SHORT[dow]}
+                    <span className={`text-xs font-semibold ${isSelected ? 'text-primary-200' : 'text-gray-400'}`}>
+                      <span className="hidden sm:inline">{DAY_SHORT[dow]}</span>
+                      <span className="sm:hidden">{DAY_NP[dow]}</span>
                     </span>
-                    <span className={`text-sm font-bold ${isToday && !isSelected ? 'text-primary-600' : ''}`}>
+                    <span className={`text-base font-bold leading-none ${
+                      isSelected ? 'text-white' : isToday ? 'text-primary-600' : 'text-gray-800'
+                    }`}>
                       {date.getDate()}
                     </span>
-                    <span className={`w-1.5 h-1.5 rounded-full ${
-                      hasMenu ? (isSelected ? 'bg-white' : 'bg-primary-400') : 'bg-transparent'
-                    }`} />
+                    {isToday && !isSelected && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+                    )}
+                    {isSelected && hasMenu && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
+                    )}
+                    {!isSelected && !isToday && hasMenu && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                    )}
+                    {!hasMenu && !isToday && !isSelected && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-transparent" />
+                    )}
                   </button>
                 )
               })}
             </div>
           </div>
 
-          {selectedDate && (
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="font-semibold text-gray-800">
-                  {getDayName(selectedDate)}, {selectedDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
-                </p>
-                <p className="text-xs text-gray-400">{formatBS(selectedDate)} BS</p>
-              </div>
-              {selectedDate.toDateString() === today.toDateString() && (
-                <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-2 py-0.5 rounded-full">Today</span>
-              )}
+          {/* Selected day info */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="font-semibold text-gray-900">
+                {selectedDate ? getDayName(selectedDate) : ''}
+                {selectedDate ? `, ${selectedDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}` : ''}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {selectedDate ? `${formatBS(selectedDate)} BS` : ''}
+              </p>
             </div>
-          )}
+            {selectedDate?.toDateString() === today.toDateString() && (
+              <span className="text-xs font-semibold bg-primary-600 text-white px-3 py-1 rounded-full">Today</span>
+            )}
+          </div>
 
+          {/* Meal cards */}
           {selectedMenu ? (
-            <div className="grid sm:grid-cols-2 gap-3">
-              {mealConfig.map(({ key, label, icon: Icon, color, bg }) =>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {mealConfig.map(({ key, label, nepali, icon: Icon, color, bg, border }) =>
                 selectedMenu[key] ? (
-                  <div key={key} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
-                    <div className={`${bg} p-2.5 rounded-lg shrink-0`}>
+                  <div key={key} className={`bg-white rounded-xl border ${border} p-4 flex items-start gap-3 shadow-sm`}>
+                    <div className={`${bg} p-2.5 rounded-xl shrink-0`}>
                       <Icon size={18} className={color} />
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-400 font-medium">{label}</p>
-                      <p className="text-sm font-semibold text-gray-800 mt-0.5">{selectedMenu[key]}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
+                        <span className="text-xs text-gray-300">{nepali}</span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-800 leading-relaxed">{selectedMenu[key]}</p>
                     </div>
                   </div>
                 ) : null
               )}
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 flex flex-col items-center text-gray-400">
-              <UtensilsCrossed size={32} className="mb-2 opacity-40" />
+            <div className="bg-white rounded-2xl border border-gray-200 p-12 flex flex-col items-center text-gray-400">
+              <div className="bg-gray-50 p-4 rounded-full mb-4">
+                <UtensilsCrossed size={32} className="opacity-40" />
+              </div>
               <p className="font-medium">No menu scheduled for this day</p>
+              <p className="text-sm mt-1">Check back later or try another day</p>
             </div>
           )}
         </section>
 
-        {/* ── Pay Rent ── */}
-        <section ref={payRef}>
-          <div className="mb-4">
+        {/* ── PAY RENT ── */}
+        <section ref={payRef} data-section="payment">
+          <div className="mb-5">
             <h2 className="text-xl font-bold text-gray-900">Pay Rent</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Tap a wallet below to scan the QR code and pay</p>
+            <p className="text-sm text-gray-400 mt-0.5">Tap a wallet to expand the QR code and scan to pay</p>
           </div>
 
           {qrs.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 flex flex-col items-center text-gray-400">
-              <QrCode size={32} className="mb-2 opacity-40" />
+            <div className="bg-white rounded-2xl border border-gray-200 p-12 flex flex-col items-center text-gray-400">
+              <div className="bg-gray-50 p-4 rounded-full mb-4">
+                <QrCode size={32} className="opacity-40" />
+              </div>
               <p className="font-medium">No payment options available yet</p>
+              <p className="text-sm mt-1">Contact the hostel admin</p>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-                {qrs.map((qr) => (
-                  <button key={qr._id}
-                    onClick={() => setSelectedQR(selectedQR?._id === qr._id ? null : qr)}
-                    className={`rounded-xl border-2 p-4 flex flex-col items-center gap-2 transition-all bg-white ${
-                      selectedQR?._id === qr._id
-                        ? 'border-primary-500 shadow-lg'
-                        : 'border-gray-100 hover:shadow-sm hover:border-gray-200'
-                    }`}>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${walletBadge[qr.wallet] ?? walletBadge.Other}`}>
-                      {qr.wallet}
-                    </span>
-                    <img src={qr.qrImage} alt={qr.wallet} className="w-24 h-24 object-contain rounded-lg" />
-                    {qr.accountName && <p className="text-xs font-medium text-gray-700 text-center">{qr.accountName}</p>}
-                    {qr.accountNumber && <p className="text-xs text-gray-500">{qr.accountNumber}</p>}
-                  </button>
-                ))}
+              <div className={`grid gap-4 mb-4 ${qrs.length === 1 ? 'grid-cols-1 max-w-xs' : qrs.length === 2 ? 'grid-cols-2 max-w-sm' : 'grid-cols-2 sm:grid-cols-3'}`}>
+                {qrs.map((qr) => {
+                  const wc = walletColors[qr.wallet] ?? walletColors.Other
+                  return (
+                    <button key={qr._id}
+                      onClick={() => setSelectedQR(selectedQR?._id === qr._id ? null : qr)}
+                      className={`rounded-xl border-2 bg-white p-4 flex flex-col items-center gap-2.5 transition-all ${
+                        selectedQR?._id === qr._id
+                          ? 'border-primary-500 shadow-lg shadow-primary-100'
+                          : `${wc.border} ${wc.glow} hover:shadow-md`
+                      }`}>
+                      <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${wc.badge}`}>{qr.wallet}</span>
+                      <img src={qr.qrImage} alt={qr.wallet}
+                        className="w-24 h-24 object-contain rounded-lg border border-gray-100" />
+                      {qr.accountName && <p className="text-xs font-semibold text-gray-700 text-center leading-tight">{qr.accountName}</p>}
+                      {qr.accountNumber && <p className="text-xs text-gray-400 font-mono">{qr.accountNumber}</p>}
+                      <span className="text-xs text-primary-500 font-medium">
+                        {selectedQR?._id === qr._id ? '▲ Close' : '▼ Scan QR'}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
 
               {selectedQR && (
-                <div className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6">
-                  <div className="flex items-center justify-between mb-5">
-                    <span className={`font-semibold px-3 py-1 rounded-full text-sm ${walletBadge[selectedQR.wallet] ?? walletBadge.Other}`}>
-                      {selectedQR.wallet}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-sm text-gray-400">
-                      <ScanLine size={15} /> Scan to Pay
-                    </span>
+                <div className="bg-white rounded-2xl border-2 border-primary-200 shadow-lg shadow-primary-50 p-6 sm:p-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <span className={`font-bold px-3 py-1 rounded-full text-sm ${(walletColors[selectedQR.wallet] ?? walletColors.Other).badge}`}>
+                        {selectedQR.wallet}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full">
+                      <ScanLine size={14} /> Scan to Pay
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center gap-4">
+                  <div className="flex flex-col sm:flex-row items-center gap-6">
                     <img src={selectedQR.qrImage} alt={selectedQR.wallet}
-                      className="w-56 h-56 object-contain rounded-xl border border-gray-200" />
-                    {selectedQR.accountName && (
-                      <p className="text-lg font-bold text-gray-800">{selectedQR.accountName}</p>
-                    )}
-                    {selectedQR.accountNumber && (
-                      <div className="bg-gray-50 px-5 py-3 rounded-xl text-center">
-                        <p className="text-xs text-gray-400 mb-1">Account / Phone Number</p>
-                        <p className="text-xl font-bold text-gray-800 tracking-widest">{selectedQR.accountNumber}</p>
+                      className="w-52 h-52 object-contain rounded-2xl border-2 border-gray-100 p-2" />
+                    <div className="flex-1 space-y-4 text-center sm:text-left">
+                      {selectedQR.accountName && (
+                        <div>
+                          <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Account Name</p>
+                          <p className="text-xl font-bold text-gray-900">{selectedQR.accountName}</p>
+                        </div>
+                      )}
+                      {selectedQR.accountNumber && (
+                        <div>
+                          <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Account / Phone</p>
+                          <p className="text-2xl font-bold text-primary-600 tracking-widest font-mono">{selectedQR.accountNumber}</p>
+                        </div>
+                      )}
+                      <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
+                        <p className="text-xs text-amber-700 font-medium">
+                          📌 After payment, show your transaction ID to the hostel admin for confirmation.
+                        </p>
                       </div>
-                    )}
-                    <p className="text-xs text-gray-400 text-center max-w-xs">
-                      After payment, inform the hostel admin with your transaction ID for confirmation.
-                    </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -285,40 +351,42 @@ export default function Landing() {
           )}
         </section>
 
-        {/* ── Feedback ── */}
-        <section ref={feedbackRef}>
-          <div className="mb-4">
+        {/* ── FEEDBACK ── */}
+        <section ref={feedbackRef} data-section="feedback">
+          <div className="mb-5">
             <h2 className="text-xl font-bold text-gray-900">Share Your Feedback</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Your feedback helps us improve. You can stay anonymous.</p>
+            <p className="text-sm text-gray-400 mt-0.5">Your opinion helps us improve. You can stay anonymous.</p>
           </div>
 
           {submitted ? (
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-10 text-center">
+            <div className="bg-white border border-green-200 rounded-2xl p-12 text-center shadow-sm">
               <div className="text-5xl mb-4">🙏</div>
-              <h4 className="text-xl font-semibold text-green-800 mb-2">Thank you!</h4>
-              <p className="text-green-700 text-sm mb-4">Your feedback has been submitted successfully.</p>
-              <button onClick={() => setSubmitted(false)} className="text-sm text-primary-600 hover:underline">
+              <h4 className="text-xl font-bold text-gray-900 mb-2">Thank you!</h4>
+              <p className="text-gray-500 mb-5">Your feedback has been received.</p>
+              <button onClick={() => setSubmitted(false)}
+                className="text-sm text-primary-600 hover:underline font-medium">
                 Submit another feedback
               </button>
             </div>
           ) : (
-            <form onSubmit={handleFeedback} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+            <form onSubmit={handleFeedback} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
+
               {/* Anonymous toggle */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                 <div>
-                  <p className="text-sm font-medium text-gray-800">Submit anonymously</p>
-                  <p className="text-xs text-gray-500">Your name won't be shown to anyone</p>
+                  <p className="text-sm font-semibold text-gray-800">Submit anonymously</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Your name won't be shared with anyone</p>
                 </div>
                 <button type="button"
                   onClick={() => setForm({ ...form, isAnonymous: !form.isAnonymous, name: '' })}
-                  className={`relative w-11 h-6 rounded-full transition-colors ${form.isAnonymous ? 'bg-primary-500' : 'bg-gray-300'}`}>
-                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.isAnonymous ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  className={`relative w-12 h-6 rounded-full transition-colors ${form.isAnonymous ? 'bg-primary-500' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${form.isAnonymous ? 'translate-x-6' : 'translate-x-0.5'}`} />
                 </button>
               </div>
 
               {!form.isAnonymous && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Your Name <span className="text-gray-400 font-normal">(optional)</span>
                   </label>
                   <input className="input-field" placeholder="e.g. Ram Shrestha"
@@ -326,29 +394,29 @@ export default function Landing() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
                   <select className="input-field" value={form.category}
                     onChange={(e) => setForm({ ...form, category: e.target.value })}>
                     {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Rating</label>
                   <StarRating value={form.rating} onChange={(r) => setForm({ ...form, rating: r })} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Your Feedback *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Your Feedback *</label>
                 <textarea required rows={4} className="input-field resize-none"
-                  placeholder="Tell us about your experience, suggestions, or complaints..."
+                  placeholder="Share your experience, suggestions, or concerns about food, rooms, staff, or facilities..."
                   value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
               </div>
 
               <button type="submit" disabled={submitting}
-                className="btn-primary w-full flex items-center justify-center gap-2 py-3">
+                className="btn-primary w-full flex items-center justify-center gap-2 py-3 text-base">
                 <Send size={16} />
                 {submitting ? 'Submitting...' : 'Submit Feedback'}
               </button>
@@ -358,18 +426,13 @@ export default function Landing() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 py-6 px-4">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary-600 p-1.5 rounded-lg">
-              <Building2 size={16} className="text-white" />
-            </div>
-            <span className="font-semibold text-gray-700 text-sm">HostelEase Nepal</span>
+      <footer className="bg-white border-t border-gray-100 py-5 mt-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
+            <div className="bg-primary-600 p-1 rounded-md"><Building2 size={14} className="text-white" /></div>
+            HostelEase Nepal
           </div>
-          <div className="flex gap-6 text-sm text-gray-400">
-            <span className="flex items-center gap-1.5"><MapPin size={13} /> Kathmandu, Nepal</span>
-            <span className="flex items-center gap-1.5"><Clock size={13} /> 6AM – 10PM daily</span>
-          </div>
+          <p className="text-xs text-gray-400">Kathmandu, Nepal &nbsp;·&nbsp; 6AM – 10PM daily</p>
           <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} HostelEase Nepal</p>
         </div>
       </footer>
